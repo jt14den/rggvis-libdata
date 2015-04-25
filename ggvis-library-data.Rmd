@@ -1,0 +1,37 @@
+---
+title: "making interactive graphs with R and ggvis"
+author: "Tim Dennis"
+date: "April 24, 2015"
+output: html_document
+---
+
+
+R is a statiscal programming language used extensively in both business and academic settings. It has shown dramatic growth in the past decade and is the most dominate statiscal programming language. `ggvis` is an R package developed by William Chen and Hadley Wickham that employs the grammar of graphics in making data visualizations.  The goal of the package is to make it easier for people to employ visualiztions on the web either through interactive visualizations that can be embedded in interactive vis or in web docs. This chapter will cover how to R and ggvis to jbuild an interactive diagrams of library data.  As part of builing up to devloping the graphics we will introduce important concpets like the grammar of graphics and data pipelines.  I'll introduce a nuber of R packages that will aid us in loading and cleaning data. As part of the outcome of this chapter the reader should be able to create a interactive graphic of library data. 
+
+## Audience
+
+This is intended for beginners, but some familiarity with R would be helpful. Familiarity with library data is also necessary. 
+
+## Section 1 - Set up
+
+Will walk through setting up R and the various packages.  I will also provide a virtual machine that will have the necessary tools installed for convenience. 
+
+## Section 2 - Introduction to Grammar of Graphics
+
+A brief introduction to xxx grammar of graphic and in particular how Hadley Wickham employs in ggvis. The crucial component of the grammar of graphics is that its provides a lego like components that can be composed to greate rich graphics.  Data coordinate system properties fand form. rewatch the vid.
+
+## Section 3 - **ggvis**
+
+We will build first graph using a library dataset (provided by a R package that wil be preloaded in the VM.  Thbe goal of this section is to familiarize user with the syntax of ggvis. Simple line, point and bar 2 diminsional graphs will be highlighted. We will note how the output of the ggvis command an image graphic in html. 
+
+## Section 4 - Adding some interactivity 
+
+This section will add a slider to the graphics and start building up 
+
+## Section 5 - R Markdown
+
+We will show how to embed our graphics in a R Markdown report.  We will show how we can easily publish our report via Rpubs. 
+
+Conclusiton 
+Using R tools ggvis along with shiny and r markdown represent a 
+Once the user becomes failiar with how to use parts of the grammar of graphics as used in ggvis, the users can easily make graphics including sophisticared javascript and html ithat support interactivtty. 
