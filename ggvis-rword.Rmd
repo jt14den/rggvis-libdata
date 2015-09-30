@@ -1,0 +1,86 @@
+---
+title: "ggvis"
+author: "Tim Dennis"
+date: "August 5, 2015"
+output: word_document
+---
+
+## Introduction
+
+Creating interactive web graphics requires a heterogeneous set of technical skills that can include data munging, analytics, web development and design. Data needs to be acquired, cleaned, transformed and then sent to a web app for rendering as a plot. This creates a barrier to entry for an analyst to effectively explore data andcreate interactive graphics in a single language in a flexible, iterative and reproducible way. This chapter will cover how a new R package, ggvis, lets librarians explore and communicate results using interactive graphics without the overhead of tinkering with javascript frameworks. ggvis brings together three concepts to make data visualization more consistent: 1) it is based on the grammar of graphics, a structure for defining the elements of a graphic; 2) it produces reactive and interactive plotting in a rendered web-based graphic and; 3) it provides support for creating data pipelines making data manipulation and plotting code more
+readable.
+
+I’ll start the chapter by going over the technology suite and dependencies needed to run ggvis. I’ll also cover the data used in the chapter and where to obtain it. Once the computing and data sources are covered, I’ll introduce how ggvis utilizes the grammar of graphics to break graphs into components made up of data, a coordinate system, a mark type and properties. This modularity allows analysts to better understand graphical elements and swap out different components to make up of a multitude of different plots. Following the grammar of graphics, I’ll start using ggvis to build simple static graphs with built-in datasets in R. While demonstrating how to create simple plots, such as, histograms, bar charts, and scatter plots, I’ll introduce how ggvis incorporates the data pipelining syntax to improve code readability and maintenance. I will also show how ggvis employs features from the data manipulation package, dplyr, to filter, summarize, or transform the data before graphing. After covering the ggvis basic features, I’ll introduce interactivity by plotting library datasets (gate count data, ejournal usage, catalog data). Starting simply, I’ll will add a bin slider to a histogram . I will then introduce how to create interactive scatterplots and line graphs with various interactive inputs (a third variable fill color, hover events, etc.). Finally, I’ll introduce how to embed ggvis plots in markdown enabled R
+(Rmarkdown) to create interactive reports. We will also briefly cover how to embed and publish ggvis plots in a web application. ggvis is still very young and currently not recommended for production
+use. However, ggvis is under active development and co-authored by two important R programmers with a track record of delivering significant R packages.
+
+ggvis opens the door for a librarian with knowledge of R to create interactive graphics without knowing the intricacies of a javascript framework or data format transformations. Furthermore, through the
+grammar of graphics and data pipelines, ggvis makes graphing code understandable and more reproducible.
+
+
+## Background 
+
+R is a statistical programming language used extensively in both business and academic settings. One of the major reasons for R's populartity is that statisticians and developers have contributed over 6,000 contributed packages that provide additional functionality to base R, including, statistical techniques, data acquisition tools, visualization, and reporting tools.  `ggvis` is an R package developed by William Chen and Hadley Wickham that employs the **grammar of graphics** in making data visualizations.  The goal of the package is to make it easier for people to build dynamic interactive visualizations that can be embedded on the web or in a dynamic report. This chapter will cover how to build graphics using R and ggvis.  As part of learning how to use ggvis, we will introduce important concepts like the **grammar of graphics** and data pipelines.  We will also introduce a number of R packages that will aid us in loading and cleaning data. The goals of this chapter are that the reader will learn how to explore and create interactive graphics using ggvis. 
+  
+### Grammar of Graphics
+
+Leland Wilkinson introduce the concept of a grammar of graphis in 1999 partly from a reaction to tools like Excel that provid a selectable taxonomy of visual treatments (Wilkinson, 1999).  Breaking away from a taxonomy of visualizations he proposed breaking down graphics into semantic parts, such as, scales and layers. In xxx, Hadley Wickham implemented Wilkinson's **grammar of graphics** in a visualization package, ggplot2, that was intended to make it easier to create publication quality static graphics in R. **ggplot2** has been a very popular package in R and is typically among the top package downloads in the R repository site, CRAN. However, **ggplot2** is primarily focused on providing R users with an easier way to string together different parts of a plot to create graphics. With creating **ggvis**, also employed a **grammar of graphics** to organize and provide structure to the graphing syntax. 
+
+### Interactive Data Visualization
+
+With the popularity of New York Times, using d3 -- a interactive visualization javascript framework, interactive visualizations with sliders, etc. (look for language in that book).... In R, the development of Shiny provides an interactive visualization framework that lets R users create client and server R code to handle interactivity. However, this still requires some technical savvy: one must serialize data into json and trigger changes in the javascript framework. ggvis was created to allow analysts to use the analytic power of R and interact and create interactive graphs that are of the web.  ggvis uses shiny to render its visualizations, but the big idea is that an analyst will not have to unserstand the client and server code.  They will just code in R and use a set of interactive widgets to provide the user ways to interact with the graphic. This is commonly a functional programming paradigm that creates a call and response type of interface.  It's a design style that tries to solve the issue of interactivity in a dynamic graphic where the data will change. In R, the data is prepared for the interactive visualization based on shiny. The reactivity occurs when an user triggers something, through an interactive control perhaps, on the graphic that changes the data needed.  (read heer again)
+
+### Literate programming and Data Pipeling
+
+> Let us change our traditional attitude to the construction of programs: Instead
+of imagining that our main task is to instruct a computer what to do, let us
+concentrate rather on explaining to human beings what we want a computer to do. (Knuth 1984)
+
+Donald Knuth originated literate programming, the idea embedding code in a text document that explains the code source, in 1992 (Knuth, 1992). Recent adaptations of this approach to improve reproducibility of analyic code and provide a way to create dynamic documents were developed in R with Rmarkdown, knitr,& sweave. This approach makes it easier for analysts to write reports and papers that contain runnable code. It improves both the reproducibility of the report and because code is interspersed inside the report, the code is usually more readable and comprehensible. 
+
+Data pipelining is based on unix convention of building small programs that can be composed in such a way that each progams output can be an input into another program.  In R, the utility package **magrittr**, provides the facility to do this using a pipe forward operator %>%.  Pacakges implementing maggritr, like ggvis, allow the use of %>% to pipe object from the left of the operator to the function or operation on the right.  We can then sequencing these pipes together in a way that say, cleans, filter and then visualizes a dataset in one interlinked code block. This makes our code simplier and easier to read and maintain. 
+### Get Started with ggvis
+
+Let us get started.  Begin by starting R Studio and running the following code.  We will use ggvis to create a plot with a built-in dataset in R. The resulting Figure 1 is below the code used to create the graph. 
+
+```{r figure_1, results='asis', eval=FALSE}
+library(ggvis)
+mtcars %>%
+  ggvis(x = ~wt, y = ~mpg) %>%
+  layer_points()
+```
+
+Let's analyze the code. First, we must use the library() statement to load the *ggvis* into the current R session.  Otherwise, even though we installed it, R will not know the package is available. Explicitly loading packages that are installed will limit the cluttering up our session (and memory footprint). You should only load what packages your use. *mtcars* is the name of a motor trends car dataset that is installed when you installed base R (source).  To find out more information on the dataset, type *?mtcars* in the R console. Notice there are variables such as mpg, cycl, and wt among others.  To create the Figure 1. graph in we need to provide *ggvis* with a data set and map variables in the dataset to some type of mark in the graph. We do this by mapping x to to the weight variable (~wt) and y to the mpg variable (~mpg). We then select the ggvis points mark with layer_points(). This entails creates a scatter plot of points with the wt variable on the x axis and mpg on the y axis. These elements are composed this way using the pipe-forward symbol (%>%) and are intended to be read as a sequence, like so: 
+
+1. take mtcars data
+2. send to the ggvis function with the x and y axises mapped to variables in the dataset
+3. then send that to a ggvis function layer_points() that will arrange as points on an x and y axes. 
+
+This pipe forward *%>%* operator is relatively new syntactical element in R provided by the package magrittr (maggrittr, date).  ggvis, along with an increasing number of other useful data cleaning and manipulating packages, uses this piping operator so we can logically sequence data preparation, manipulation and visualization in one stanza. Without the piping operator in ggvis, to get the same effect, one would have to nest functions like this: 
+
+```{r, results='asis', eval=FALSE}
+p <- layer_points(ggvis(mtcars, x = ~wt, y = ~mpg))
+p
+```
+
+We will return to data piping later in this chapter, but suffice it to say this is a important development in an effort to create logical, sequential and readable code.  
+
+### Grammar of graphics  
+
+As we've seen in Figure 1, in order to produce a graphic, *ggvis* needs at its most elemental level data and a varible mapping to a coordinate system. But this is just a starting point  on the available  *ggvis* uses implements the *grammar of graphics* to express a graphic output of visual elements.  In ggvis, the grammar of graphics is the ability to declaratively state components of a graphic.  The components are composed of data, a coordinate system, a marking system, and properties.  
+
+#### Coordinate system
+
+For a coordinate system, we are mainly concerned with Cartesian coordinates in this chapter. ggvis currently doesn't support polar coordinates (pie charts) and the other coordinate systems supported are out of scope for this chapter.  
+
+#### Marks 
+
+We've already encountered a marking system by using layer_points() in the previous example.  We can simply change this marking system by editing the previous code and pipe our data into layer_lines() instead.  
+
+```{r figure_2, results='asis', eval=FALSE}
+library(ggvis)
+mtcars %>%
+  ggvis(x = ~wt, y = ~mpg) %>%
+  layer_lines()
+```
+

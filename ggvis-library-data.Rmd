@@ -1,37 +1,404 @@
 ---
-title: "making interactive graphs with R and ggvis"
+title: "Using R and ggvis to Create Interactive Graphics for Exploratory Data Analysis"
 author: "Tim Dennis"
-date: "April 24, 2015"
-output: html_document
+date: "September 30, 2015"
+output:
+  word_document:
+    reference_docx: template2.docx
+  pdf_document: default
+  html_document:
+    highlight: tango
+    theme: readable
+csl: chicago-author-date.csl
+bibliography: ggvis.bib
 ---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=8, fig.height=6, fig.path='figures/',
+                       warning=FALSE, message=FALSE)
+```
+```{r echo=FALSE}
+#install.packages('ggvis','dplyr','tidyr')
+library(ggvis)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+```
+
+## Introduction
+
+Creating interactive web graphics requires a heterogeneous set of technical skills that can include data munging, analytics, web development and design. Data needs to be acquired, cleaned, transformed and then sent to a web app for rendering as a plot. This creates a barrier to entry for an analyst to effectively explore data and create interactive graphics in a single language in a flexible, iterative and reproducible way. This chapter will cover how a new R package, ggvis [@ggvis], lets librarians explore and communicate results using interactive graphics without the overhead of tinkering with  frameworks. ggvis brings together three concepts to make data visualization more consistent: 1) it is based on the grammar of graphics, a structure for defining the elements of a graphic; 2) it produces reactive and interactive plotting in a rendered web-based graphic and; 3) it provides support for creating data pipelines making data manipulation and plotting code more
+readable.
+
+I will start the chapter by going over the technology suite and dependencies needed to run ggvis. I’ll also cover the data used in the chapter and where to obtain it. Once the computing and data sources are covered, I’ll introduce how ggvis utilizes the grammar of graphics to break graphs into components made up of data, a coordinate system, a mark type and properties. This modularity allows analysts to better understand graphical elements and swap out different components to make up of a multitude of different plots. Following the grammar of graphics, I’ll start using ggvis to build simple static graphs with built-in datasets in R. While demonstrating how to create simple plots, such as, histograms, bar charts, and scatter plots, I will introduce how ggvis incorporates the data pipelining syntax to improve code readability and maintenance. I will also show how ggvis employs features from the data manipulation package, dplyr [@dplyr], to filter, summarize, or transform the data before graphing. After covering the ggvis basic features, I will introduce interactivity by plotting library datasets (gate count data, ejournal usage, catalog data). Starting simply, I’ll will add a bin slider to a histogram . I will then introduce how to create interactive scatterplots and line graphs with various interactive inputs (a third variable fill color, hover events, etc.). Finally, I’ll introduce how to embed ggvis plots in markdown enabled R (Rmarkdown) to create interactive reports. We will also briefly cover how to embed and publish ggvis plots in a web application. ggvis is still very young and currently not recommended for production
+use. However, ggvis is under active development and co-authored by two important R programmers with a track record of delivering significant R packages.
+
+ggvis opens the door for a librarian with knowledge of R to create interactive graphics without knowing the intricacies of a JavaScript framework or data format transformations. Furthermore, through the grammar of graphics and data pipelines, ggvis makes graphing code understandable and more reproducible.
 
 
-R is a statiscal programming language used extensively in both business and academic settings. It has shown dramatic growth in the past decade and is the most dominate statiscal programming language. `ggvis` is an R package developed by William Chen and Hadley Wickham that employs the grammar of graphics in making data visualizations.  The goal of the package is to make it easier for people to employ visualiztions on the web either through interactive visualizations that can be embedded in interactive vis or in web docs. This chapter will cover how to R and ggvis to jbuild an interactive diagrams of library data.  As part of builing up to devloping the graphics we will introduce important concpets like the grammar of graphics and data pipelines.  I'll introduce a nuber of R packages that will aid us in loading and cleaning data. As part of the outcome of this chapter the reader should be able to create a interactive graphic of library data. 
+## Background 
 
-## Audience
+R is a statistical programming language used extensively in both business and academic settings. One of the major reasons for R's popularity is that statisticians and developers have contributed over 7,000 contributed packages that provide additional functionality to base R, including statistical techniques, data acquisition tools, visualization, and reporting tools.  *ggvis* is an R package developed by William Chen and Hadley Wickham that employs the *grammar of graphics* in making data visualizations [@ggvis].  The goal of the package is to make it easier for people to build dynamic interactive visualizations that can be embedded on the web or in a dynamic report.  
+  
+### Grammar of Graphics
 
-This is intended for beginners, but some familiarity with R would be helpful. Familiarity with library data is also necessary. 
+Leland Wilkinson introduce the concept of a grammar of graphis in 1999 partly from a reaction to tools like Excel that provid a selectable taxonomy of visual treatments [@Wilkinson2005].  Breaking away from a taxonomy of visualizations he proposed breaking down graphics into semantic parts, such as, scales and layers. In 2005, Hadley Wickham implemented Wilkinson's grammar of graphics in a visualization package, ggplot2, that was intended to make it easier to create publication quality static graphics in R [@ggplot2]. ggplot2 has been a very popular package in R and is typically among the top package downloads in the Comprehensive R Archive Network (CRAN). However, ggplot2 is primarily focused on providing R users with an easier way to string together different parts of a plot to create static graphics. With ggvis, Wickham also employed a grammar of graphics to organize and provide structure to the graphing syntax. 
 
-## Section 1 - Set up
+### Interactive Data Visualization
 
-Will walk through setting up R and the various packages.  I will also provide a virtual machine that will have the necessary tools installed for convenience. 
+Since the New York Times has popularized the use of the D3 interactive visualization JavaScript framework, interactive visualizations with sliders, etc. are increasingly favored. In R, the development of Shiny [@shiny] provides an interactive visualization framework that lets R users create client and server R code to handle interactivity. However, this still requires some technical savvy: one must serialize data into JSON and trigger changes in the JavaScript framework. ggvis was created to allow analysts to use the analytic power of R and create interactive graphs that are of the web.  In the background, ggvis uses Shiny to render its visualizations, but the big idea is that an analyst will not have to understand the technology stack that produces the client and server code.  In R, they will declaritively code the type visualization and interaction they want to enable and ggvis will prepare the data and the consuming javascript visualization. Programmatically, this adheres to a functional programming paradigm that creates a call and response type of interface.  It's a design style that tries to solve the issue of interactivity in a dynamic graphic where the data will change. In R, the data is prepared for the interactive visualization and fed to a Shiny graphic. The reactivity occurs when a user triggers something through an interactive control that changes the data needed. The benefit for librarian analysts is that we can focus on creating our analysis in R without focusing on how the interactivity in a graphic is accomplished. 
 
-## Section 2 - Introduction to Grammar of Graphics
+### Literate programming and Data Pipeling
 
-A brief introduction to xxx grammar of graphic and in particular how Hadley Wickham employs in ggvis. The crucial component of the grammar of graphics is that its provides a lego like components that can be composed to greate rich graphics.  Data coordinate system properties fand form. rewatch the vid.
+> Let us change our traditional attitude to the construction of programs: Instead
+of imagining that our main task is to instruct a computer what to do, let us
+concentrate rather on explaining to human beings what we want a computer to do. (Knuth 1984)
 
-## Section 3 - **ggvis**
+Donald Knuth conceptualized *literate programming* -- the idea of embedding code in a text document that explains the code source -- in 1992 [@Knuth1992]. Recent adaptations of this approach to improve reproducibility of analytic code and provide a way to create dynamic documents were developed in R with Rmarkdown and knitr [@rmarkdown, @knitr1]. This approach makes it easier for analysts to write reports and papers that contains runnable code. It improves the reproducibility of the report and because code is interspersed inside the report, the code is contextually more readable and comprehensible. 
 
-We will build first graph using a library dataset (provided by a R package that wil be preloaded in the VM.  Thbe goal of this section is to familiarize user with the syntax of ggvis. Simple line, point and bar 2 diminsional graphs will be highlighted. We will note how the output of the ggvis command an image graphic in html. 
+Data pipelining is based on the Unix convention of building small programs that can be composed in such a way that each progam's output can be an input into another program.  In R, the utility package *magrittr* [@magrittr], provides the facility to do this using a forward pipe operator %>%.  Pacakges implementing maggritr, like ggvis, allow the use of %>% to pipe object from the left of the operator to the function or operation on the right.  We can then sequence these operations together in a way that say, cleans, filter and then visualizes a dataset in one interlinked code block. This makes our code simplier and easier to read and maintain. 
 
-## Section 4 - Adding some interactivity 
 
-This section will add a slider to the graphics and start building up 
+## Using ggvis
 
-## Section 5 - R Markdown
+###Setup
 
-We will show how to embed our graphics in a R Markdown report.  We will show how we can easily publish our report via Rpubs. 
+In order to use *ggvis* or run the code in this chapter, you must install a number of tools on your machine. You must have base R, RStudio, ggvis, tidyr [@tidyr], and dplyr installed and available. These tools are all open source and freely downloadable via the R repository. Follow the below instructions for more information on getting set up. 
 
-Conclusiton 
-Using R tools ggvis along with shiny and r markdown represent a 
-Once the user becomes failiar with how to use parts of the grammar of graphics as used in ggvis, the users can easily make graphics including sophisticared javascript and html ithat support interactivtty. 
+####Install R
+
+If you are on a Linux machine, R is most likely in the package manager for your distribution (e.g. apt-get install r-base). On Windows and Macs, go to [http://www.r-project.org](http://www.r-project.org) and follow the *download R* link off that page.  R code and packages are mirrored all over the world via the CRAN, so choose the mirror nearest you (in my case it's http://cran.stat.ucla.edu/). Choose your operating system, select 'base', then download the latest R release (as of this writing it's R 3.2.2).  Run the installer and you should have R installed. You can confirm R is installed by opening a terminal in Mac and Linux or the command shell in Windows and simply typing R. You should see note about the R version you are running and information about demos, citing R, etc.  
+
+R belongs to a class of programming languages (Python and Julia are others) that adopts a REPL (read-evaluation-print-loop) style of interactive code. This simply means that you will often interact with a console to work out code, seeing how your code snippits work in the console, and continually building up a runnable script in an file.  You can try this out by using the console as a calculator. Type `2 + 2` or `4 / 2` and observe the output. Familiarizing youself with how the R console operates is a key step in becoming an efficient R data analyst.  Before we explore futher, let's install a integrated development environment for R. Type `q()` to quit R.  
+
+####Install RStudio
+
+There are many ways to create and edit R scripts and interact with the R languages.  For this chapter we are using RStudio becuase it makes presenting interactive ggvis plots seamless [@rstudio].  Running R natively via the console will open ggvis plots in a browser, so you can do it that way, but RStudio provides a nice View panel for viewing gaphics. It also provides a multi-paneled interface with separate areas for script editing, the R help library, package installation, R environment & command history, and an R project management tool.  It is highly recommended by the author to use with the code in this chapter. To install, go to [https://www.rstudio.com/products/rstudio/download/](https://www.rstudio.com/products/rstudio/download/) and select your operating system to download.  Once installed you can open the application and familiarize yourself with the windows. With R and RStudio installed, you can work through any number of introductory free R courses on the web.  One novel tutorial is [http://swirlstats.com/](swirl), a interactive R course, built as a R package [@swirl]. This tutorial will also develop your familiarity with RStudio as you interact with the challenges.  
+
+####Install ggvis and other packages
+
+To install the latest release of *ggvis* you can use the RStudio Packages window or simply type the following in the Console window in RStudio:
+
+```{r eval=FALSE}
+install.packages("ggvis")
+
+```
+
+
+This will install R from CRAN, the R package manager.  However, since ggvis is under active development, you can also install the development version avaialble in GitHub. To do this we will need to install a package called *devtools* first.  You can type the following in the console to get the devolpment version of ggvis:
+
+
+```{r eval=FALSE}
+install.packages("devtools")
+devtools::install_github("hadley/lazyeval", build_vignettes = FALSE)
+devtools::install_github("hadley/dplyr", build_vignettes = FALSE)
+devtools::install_github("rstudio/ggvis", build_vignettes = FALSE)
+
+```
+
+After one of the versions is installed, you can tell R you are ready to use the package by typing `library("ggvis")` in the console. 
+
+In this chapter, we will also be using both the tidyr and dplyr packages [@tidyr; @dplyr]. Created by same author of ggvis, Hadley Wickham, these packages provide a number of functions that are helpful in cleaning and manipulating untidy data. They also both implement the migrittr forward pipe syntax, so we can use them to build up our data pipelines. If you installed the dev version of ggvis above, you should have dplyr installed, so ignore the install dplyr below (it won't hurt R to reinstall). To install tidyr and dplyr run this code from the console: 
+
+```{r eval=FALSE}
+install.packages('tidyr')
+install.packages('dplyr')
+install.packages("ggplot2") 
+```
+
+####Other tools
+
+When you installed RStudio, it installs a number of helpful packages in the backgroud.  *Rmarkdown* is a package that enables writing documents in text with interspersed R code chuncks [@rmarkdown].  Knitr is a package that takes the Rmarkdown document and creates a target ouput format, such as, html, word, or a presentation tool [@knitr].  This chapter was written in Rmarkdown and converted to word for publication. The Rmarkdown for this chapter can be found on the author's GitHub account. If you download the GitHub files, open the *ggvis-library-data.Rmd* file and select *Knit HTML* at the top of the RStudio edit window, then knitr will transform the markdown into HTML and run the embedded R code. This documentation style is called a *literate programming* and is a powerful way to create clear and understandable code because the program is interspersed with markup text and the produced document contains code, code output and text.  It is also an excellent way to create dynamic reports or documents because the analytic code and results are embedded with any expository text. Plots and figures will be embedded inline in the document as well. 
+
+#### A note on the data
+
+The data and code used for this chapter can be found in the author's GitHub account < link >.  The library gate count and circulation data are canned and are for illustrative purposes only. The shape of the data is based on real data found on the web, but the numbers and names have been massaged.  The Plos altmetrics data comes from the PLOS API and also stored as a CSV in the GitHub account [@plos]. 
+
+### Get Started with ggvis
+
+Let us get started exploring these tools.  Begin by starting RStudio and running the following code.  We will use ggvis to create a plot with a built-in dataset in R. The resulting Figure 1 is below the code used to create the graph. 
+
+```{r figure_1, eval=FALSE}
+library(ggvis)
+diamonds %>%
+  ggvis(x = ~carat, y = ~price) %>%
+  layer_points()
+```
+
+Let's analyze the code. First, we must use the library() statement to load the ggvis into the current R session.  Otherwise, even though we installed it, R will not know the package is available. Explicitly loading packages that are installed will limit the cluttering up our session (and memory footprint).  dimonds is the name of a data containing  prices, carat size and other features of diamonds.  It is installed with the ggplot2 package that we installed earlier. To find out more information on the dataset, type `?diamonds` in the R console. Notice there are variables such as price, carat, and cut among others.  To create the Figure 1. graph in we need to provide ggvis with a data set and map variables in the dataset to some type of mark in the graph. We do this by mapping x to to the weight variable (~carat) and y to the mpg variable (~price). We then select the ggvis points mark with `layer_points()`. This entails creates a scatter plot of points with the carat variable on the x axis and price on the y axis. These elements are composed this way using the pipe-forward symbol (%>%) and are intended to be read as a sequence, like so: 
+
+1. take diamonds data
+2. send to the ggvis function with the x and y axises mapped to variables in the dataset
+3. then send that to a ggvis function layer_points() that will arrange as points on an x and y axes. 
+
+This pipe forward *%>%* operator is relatively new syntactical element in R provided by the package magrittr [@magrittr].  ggvis, along with an increasing number of other useful data cleaning and manipulating packages, uses this piping operator so we can logically sequence data preparation, manipulation and visualization in one stanza. Without the piping operator in ggvis, to get the same effect, one would have to nest functions like this: 
+
+```{r, eval=FALSE}
+p <- layer_points(ggvis(diamonds, x = ~carat, y = ~price))
+p
+```
+
+We will return to data piping later in this chapter, but suffice it to say this is an important development in an effort to create logical, sequential and readable code.  
+
+### Grammar of graphics  
+
+As we've seen in Figure 8.1, in order to produce a graphic, ggvis needs at its most elemental level data and a variable mapping to a coordinate system. TODO: But this is just a starting point  on the available ggvis uses implements a grammar of graphics to express a graphic output of visual elements.  In ggvis, the grammar of graphics is the ability to declaratively state components of a graphic.  The components are composed of data, a coordinate system, a marking system, and properties.  
+
+#### Coordinate system
+
+For a coordinate system, we are mainly concerned with Cartesian coordinates in this chapter. ggvis currently doesn't support polar coordinates (pie charts) and the other coordinate systems supported are out of scope for this chapter.  
+
+#### Marks 
+
+We've already encountered a marking system by using layer_points() in the previous example.  We can simply change this marking system by editing the previous code and pipe our data into layer_lines() instead.  
+
+```{r figure_2, eval=FALSE}
+library(ggvis)
+diamonds %>%
+  ggvis(x = ~carat, y = ~price) %>%
+  layer_lines()
+```
+
+Besides point and lines, other layers include layers_paths(), layers_ribbons(), layers_rects() and layers_histogram(). TODO: correct help. Use the `?` operator on each and see if you can figure out running them on diamonds Some require more mappings, some require less. For instance, layer_histograms() can be run on a single continuous numeric variable because it measures  distribution. `layer_paths()`, in contrast, takes two variables and will draw a path between the points in the data, sequentially connecting points in the order they appear in a dataset.   
+
+#### Properties 
+
+Layers have different properties that can be altered. Points can be set to specific colors, size, shape, opacity, and stroke. Those attributes can also be mapped to values in the data set.  Lines have similar properties like color and opacity, but have different properties such as stroke, strokeDash, and strokeWidth. When working with properties, its is important to understand that you can map the property to values in a variable in your data or you can manually set it to something arbitrary.  A property mapped to values in the data will subsequently communicate another aspect of your data. In order to map values to a color we use the equal operator (=). However, to manually set properties ggvis introduces a new operator of colon followed by equal sign (:=). To illustrate this let's play with the *diamonds* data in R.  First, I want to add a color attribute to the Figure 8.2 that represents the *cut* variable (quality of the cut).  We do this by adding `fill = ~cut` to the layer_points().  Note that we could also add to *ggvis()* which would propagate down to the layer_points(), but setting it to layer_points() will limit knock-on affects if we add other layers. This is because other layers might not have a fill property. We will also add make the point the shape of a cross. Notice, that I'm using the `:=` set operator and not the mapping operator. This will set all points to a cross. 
+
+```{r figure_3, eval=FALSE}
+library(ggvis)
+diamonds %>%
+  ggvis(x = ~price, y = ~carat) %>%
+  layer_points(fill = ~cut, shape := "cross")
+```
+
+### Data pipelines 
+
+Let's return to the concept of data pipeline and demonstrate the power of this tool in data cleaning.  Hadley Wickham has characterized tidy data (data that is ready to analyze) as data with variables across the columns and values in the cells TODO:cite tidy data. The data we normally receive in the library world isn't in this tidy format.  Often, data we receive will in in some spreadsheet format with values like year across the column and variables down the rows.  We also receive data in separate files that need to be merged before analysis or visualization.  Hadley Wickham's tidyr packages helps us get the data in the proper shape. In the past, in order to do these types of operations on data we often needed to nest function calls and save outputs of these processes as a temporary dataframe. This problem of nesting these functions calls is sometimes called the Dagwood sandwich problem, because like tall sandwich we much have  TODO: proper cite.(Wickham, 2014, p.237).  Another issue this obviates is the need for temporary dataframes to save transformations from a previous statement before acting on them with another operation.  Suffice it to say for now, the piping operator provided in ggvis allows us to sequence our visualizations making the code cleaner and easier to read (and comprehend). 
+
+Often you might receive data like this that isn't ready to visualize: 
+
+```{r read_gate} 
+gate <- read.csv('data/1-gate-count.csv', check.names=F, sep=',')
+gate <- tbl_df(gate)
+head(gate)
+```
+In this case, we see years are in the columns and region in the rows. We need to use a tool called tidyr to reshape this data so the region and year variables are in the columns before we can feed it to ggvis. 
+
+Let us first look at an 'old' way of tidying the data: 
+
+```{r tidy_old}
+library(tidyr)
+library(dplyr)
+gate2 <- arrange(gather(gate, Year, Count, -branch), Year, Count)
+head(gate2)
+```
+
+Let's use the %>% pipe operator to set up a sequence.  
+
+```{r tidy_new}
+library(tidyr)
+gate2 <- gate %>%
+  gather(Year, Count, -branch) %>%
+  group_by(branch) %>%
+  arrange(Count)
+head(gate2)
+```
+Now, both produce the same output, but we can see the data is tidy and ready for further analysis.  We will now plot the data using the piping operator: 
+
+```{r figure_, eval=FALSE}
+gate %>%
+  gather(Year, Count, -branch) %>%
+  ggvis(x= ~Year,y= ~Count) %>%
+  layer_bars()
+```
+
+Wouldn't it be better if we added some visual color and a stacked bar to differentiate the branches?  This is easy to do in ggvis, by adding a fill property to our ggvis() function.  We need to convert our branch to a factor (categorical variable) so ggvis can group these on the graph.  The changes are made as follows:
+
+```{r figure_4, eval=FALSE}
+gate %>%
+  gather(Year, Count, -branch) %>%
+  ggvis(x= ~Year,y= ~Count, fill = ~as.factor(branch)) %>%
+  layer_bars()
+```
+
+Now we have color! ggvis will take the factor and automatically group and assign a color to represent a branch.  There are ways to control the color but that's beyond the scope of this chapter. Notice how the resulting code is easy to read and much more maintainable than nesting functions and keeping track of temporary dataframes. We can also easily alter the layers and properties to create hundreds of different plots. This is a powerful way to explore data in a succinct and build up meaningful plots.  
+
+```{r read_count_circ}
+gcirc <- read.csv('data/2-gate-circ.csv', check.names=F, sep=',')
+gcirc <- tbl_df(gcirc)
+head(gcirc)
+```
+  
+Let's add another variable, circulation statistics, to our gate count example and look at a series of scatter plots.  
+
+```{r figure_5, eval=FALSE}
+gcirc %>%
+  ggvis(x = ~Count, y= ~circ) %>%
+  layer_points() 
+```
+
+Nothing too surprising here. We expect there should be a relationship based on gate count and circulation. We notice a few outliers that might be branches that do not circulate as much or have restricted collections. 
+
+```{r figure_6, eval=FALSE}
+gcirc %>%
+  ggvis(x = ~Count, y= ~circ, fill = ~factor(branch)) %>%
+  layer_points() 
+```
+
+We can add a fill color to the graph for each branch. Once again, we need to convert our branch numbers to a factor otherwise ggvis will treat as a continuous spectrum of color instead of groups. 
+
+```{r figure_7, eval=FALSE}
+gcirc %>%
+  ggvis(x = ~Count, y= ~circ, fill = ~factor(branch)) %>%
+  layer_points() %>%
+  layer_smooths() 
+```
+
+Finally, we can draw a regression line on the graph using the layer_smooth().  This line is the result of taking the differences between on the graph and squaring their sums. This lets us know if the variable have a linear relationship to one another. In this case, increase in gate count, has a linear relationship with check out statistics.  This meets our logic. If we had other variables 
+
+### Adding interactivity
+
+Now we have covered the using the grammar of graphics with ggvis and have created a number of plots, we can start to add interactivity to our graphics. ggvis supports the following interactive controls that you can add to your graphic: 
+
+* input_slider(), a slider that produces a range control
+* input_checkbox(): a interactive checkbox
+* input_checkboxgroup(): a grouping of checkboxes
+* input_numeric(): a validator that allows only numbers to be inputed
+* input_radiobuttons(): selectable radio buttons, only one can be selected
+* input_select(): a drop-down textbox
+* input_text(): text input
+
+Let's follow on from our previous example, Figure 8, and alter to add a point size operator to the graph. We do this by setting the size of layer_points() to an input_slider on a range from 100 to 1000.  
+
+```{r figure_8, eval=FALSE}
+gcirc %>%
+  ggvis(x = ~Count, y = ~circ) %>%
+  layer_points(size := input_slider(100, 1000, value = 100)) %>%
+  layer_smooths()
+```
+
+We can also add radio buttons that set the color of the points by adding a fill parameter set to input_radiobuttons().
+
+```{r figure_9, eval=FALSE}
+gcirc %>%
+  ggvis(x = ~Count, y = ~circ, fill := input_radiobuttons(label = "Choose color:", 
+                                                          choices = c("blue", "red", "green"))) %>%
+  layer_points(size = ~Count)
+ 
+```
+
+As we run this code in RStudio, it will open up in the Viewer panel, but notice that there is a red stop sign on the upper right of the console window.  The console also prints out a nice note letting you know you are running a dynamic visualization. What's happening here is that with the ggvis visualization running in the viewer, the R process is still running and waiting for changes in the visualization slider element to respond to.  Once you alter the slider, a new stream of data points will then be sent to the visualization to be rendered. This call and response type activity in ggvis is characterized as a reactive functional programming style and, in ggvis, it characterizes an interplay between an HTML/JavaScript visualization framework (Vega) and your ggvis code.  After running this code in RStudio, interact with the slider and alter data.  Notice the red stop light is still showing up and waiting for further changes. 
+
+
+#### Histogram 
+
+I obtained data from PLOS article level metrics API with the ALM package saved to the GitHub repository for this chapter. The code I used to obtain the data is also in the GitHub package, but the *alm* package makes it easy to query the PLOS API for article metrics. Of note, other publishers (CrossRef, PKP, Pensoft) are using the PLOS API to serve up metrics on their journals. The data represent 50 articles by DOI queried using the PLOS AIP and saved out as a csv as *data/3-alm.csv*. Each column represents metrics from various sources, including Counter, Crossref, Scopus, Twitter, etc. If I signed up for API keys for different sources, I could perform more granular queries, but for our needs the simple search used in the ROpenSci tutorial on 'science' in PlosOne suffices.  The query returned 50 articles from PLOS One with their associated metrics.  You can query by the DOI of an article in question. First, let's read in the ALM data that I saved as a csv and look at the titles.   
+
+```{r read_plos}
+altmet <- read.csv('data/3-alm.csv', check.names=F, sep=',')
+altmet <- tbl_df(altmet)
+head(altmet$title)
+```
+To get a better sense of what is in the data we can use the *glimpse* function provided by dplyr. For brevity, I have snipped the output. 
+```{r}
+altmet <- altmet[,c(2,3,15,33,39,51,63,69,99)]
+```
+```{r}
+glimpse(altmet)
+```
+
+Notice that we have variables on the article DOIs, their title, and metrics from each source. Notice that these data include metrics from social media  and web sources like Twitter and Wikipedia. One way to explore this data from each source is by using a histogram to see the distribution of metrics of these journal articles we have in our dataset. Since we haven't covered a histogram yet, let's create a static one. 
+
+```{r figure_10, eval=FALSE}
+altmet %>% 
+  ggvis(~scopus_total) %>%
+  layer_histograms()
+```
+To create a histogram, ggvis much first look at the data create bins to group and place the data in. This happens behind the scenes in ggvis, but it is worth noting that ggvis has a compute_bin() function that layer_histogram() calls to do the binning.  This can be called separately, like so:
+
+```{r compute_bin}
+binned <- altmet %>% compute_bin(~scopus_total)
+head(binned)
+```
+From here, we could use this binned dataframe to set the histogram in code. 
+
+Bin width is an important parameter in a histogram because to show a distribution of a variable one can miss the shape of the data if the bin width is too large or too small.  Let's look at our previous plot with a different bin set. 
+
+```{r figure_11, eval=FALSE}
+altmet %>%
+  ggvis(~scopus_total) %>%
+  layer_histograms(width = 10)
+```
+We can see that with a bin width too x the variable distribution is obscured.  Since altering the bin width while exploring the distribution of a continuous variable is such a common task in data exploration, it makes sense to make this an interactive part of the ggvis graphic.  
+
+
+```{r figure_12, eval=FALSE}
+altmet %>% 
+  ggvis(~scopus_total) %>%
+  layer_histograms(width =  input_slider(0, 2, step = 0.10, label = "width"),
+                   center = input_slider(0, 2, step = 0.05, label = "center"))
+
+```
+
+As we've seen, the bin width strongly affects the value of a histogram in seeing the shape of data. One way to get a different sense of the distribution of a variable is through a density plot.  These plots are available in ggvis via a layer_density().  The density layer can produce a number of different types of density plots based on different smoothing algorithms, called kernel smoothing. By default, the ggvis uses Gaussian smoothing. You can find out how are computed by looking into kernel smoothing on the web. 
+
+Let's see what a static version looks like against a different source column in our Altmetrics data.
+
+```{r figure_13, eval=FALSE}
+ altmet %>% 
+  ggvis(~pmc_total) %>%
+  layer_histograms(width =  input_slider(0, 2, step = 0.10, label = "width"),
+                   center = input_slider(0, 2, step = 0.05, label = "center"))
+```
+
+Now let's make this graphic interactive by allowing the user to select different kernel smoothers.  This is done by assigning the kernel parameter in the layer_density() function to an input_selector containing various smoothers. Run the code and switch back and forth between the different types of kernel smoothers. You can see each kernel produces a different shape and hopefully gives more insight to the data. 
+
+```{r figure_14, eval=FALSE}
+altmet %>% ggvis(x = ~scopus_total) %>%
+    layer_densities(
+      adjust = input_slider(.1, 2, value = 1, step = .1, label = "Bandwidth adjustment"),
+      kernel = input_select(
+        c("Gaussian" = "gaussian",
+          "Epanechnikov" = "epanechnikov",
+          "Rectangular" = "rectangular",
+          "Triangular" = "triangular",
+          "Biweight" = "biweight",
+          "Cosine" = "cosine",
+          "Optcosine" = "optcosine"),
+        label = "Kernel")
+    )
+````
+
+## Discussion
+
+###Caveat: ggvis is currently under development. 
+
+If you load ggvis from the CRAN repository, you will get this message: 
+
+> The ggvis API is currently rapidly evolving. We strongly recommend that you do not rely on this for production, but feel free to explore. If you encounter a clear bug, please file a minimal reproducible example at https://github.com/rstudio/ggvis/issues. For questions and other discussion, please use https://groups.google.com/group/ggvis.
+
+At the time of this writing ggvis is on 0.42 version.  There are limitations and, as the developers indicate, it really shouldn't be run in production. That said, as this chapter has demonstrated, it can be a great tool to explore and get a feel for data.  Also, since the aim of ggvis is that it will be the successor to ggplot2, routinely a most used package in the CRAN repository, it's is reasonable to assume that learning ggvis will put you in good stead for the future.  However, it will be moving target and code you write now might need to be altered as the API changes. 
+
+
+###Eases barrier to web and interactive graphics
+
+Building interactive graphics are a thorny proposition for a data person.  A data anlayst must prepare the data, perform relevant analysis of the data, and get the data structured so a web application can consume it. The web application then must listen for changes in triggering events and change the visualization.  Abstracting these activities so a analyst can focus on the data and using R to analyze the data isn't simple and many aspects on how best to do this are being worked out now. ggvis shows the way to making these simpler for data visualizations to focus on R code and declarative statements about the story he or see is trying to tell wit the data. 
+
+###Facilitates easier to understand code
+
+Because ggvis is plugged into a larger framework of packages that support data pipeling, writing clean and maintainable code becomes much easier.  In this chapter, we explored how to read in data and reshape it and then feed that data to ggvis. This is scratching the surface how how this pipelining framework can be utilized.  dplyr, a data manipulation package in R, also implements the forward piping syntax and allows R users to perform all types of manipulations on the data (subset, filter, add new computed variables, and group data).  Put together, one could read a dirty dataset, reshape, clean, filter, add computed variables, group by value types, and then visualize in one code chunk sequence.  Because there was thought put into the conceptual underpinnings of the verbs used by these tools (select, gather, mutate), once you learn how to use these operations on data, it flexibly opens up toolbox of data manipulation. 
+
+Further, in this chapter we used data that was stored on a file in a csv format.  dplyr supports acquiring data from a database as well. So, if one has library data in a database, one could use the data pipelining features in ggvis, dplyr and tidyr to query, select, filter and visualize all in R. A big win, however, from this the ability to understand the code you or a colleague wrote in the future. Because of the choice of the grammar of graphic and sensible vocabulary for data manipulation, coming back to your code in the future won't be as difficult enterprise. And because it is 'code' you won't have to retrace your step in an interactive tool like excel.  You might have to change some filenames or some code if the source data has changed, but you should be in better shape to adapt to change. Alternately, getting your analysis into R and piping into ggvis allows you to think about how to abstract your code to adapt to change in an automated way (different years of data, etc.).  Using a structured and defined vocabulary of terms related to data manipulation processes enables producing simpler and comprehendable code. 
+
+## Conclusions 
+
+### ggvis
+
+ggvis aims to ease the difficulty in creating interactive graphics in R that can be deployed on the web or in a dynamic report.  
+
+### Hadleyverse ecosystem in R 
+
+Hadleyverse called the packages that include ones created by Hadley Wickham, mostly focused on making it easier to get data into, clean it, prepare it for analysis and visualize findings. These tools have a consistent logic or grammar behind them, typically support the ability to pipeline processes, and abstract lower level coding in R. This means they are interlocking packages that make R easier to learn and use.
+
+#Bibliography
